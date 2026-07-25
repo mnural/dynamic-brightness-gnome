@@ -1,0 +1,13 @@
+{
+  "name": "Dynamic Brightness",
+  "description": "Adjust screen brightness dynamically based on the screen contents.",
+  "uuid": "dynamic-brightness@mnural.com",
+  "url": "https://github.com/mnural/dynamic-brightness-gnome",
+  "shell-version": [
+    "46",
+    "47",
+    "48",
+    "49",
+    "50"
+  ]
+}

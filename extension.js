@@ -23,7 +23,7 @@ const DynamicBrightnessToggle = GObject.registerClass(
             this._extension = extension;
 
             // Listen to the toggle state of the pill button
-            this.connect('notify::checked', () => {
+            this._extension.connectSignal(this, 'notify::checked', () => {
                 if (this.checked) {
                     this._extension.startLoop();
                 } else {
@@ -44,7 +44,7 @@ const DynamicBrightnessToggle = GObject.registerClass(
             this._sliderItem.add_child(this._maxBrightnessSlider);
             this.menu.addMenuItem(this._sliderItem);
 
-            this._maxBrightnessSlider.connect('notify::value', (slider) => {
+            this._extension.connectSignal(this._maxBrightnessSlider, 'notify::value', (slider) => {
                 let rawVal = slider.value * 100;
                 let snappedVal = Math.round(rawVal / 10) * 10;
                 
@@ -80,7 +80,7 @@ const DynamicBrightnessToggle = GObject.registerClass(
 
         _createIntervalOption(label, ms) {
             let item = new PopupMenu.PopupImageMenuItem(label, 'radio-unchecked-symbolic');
-            item.connect('activate', () => {
+            this._extension.connectSignal(item, 'activate', () => {
                 this._extension.setInterval(ms);
                 this._intervalItems.forEach(i => i.setIcon('radio-unchecked-symbolic'));
                 item.setIcon('radio-checked-symbolic');
@@ -109,7 +109,7 @@ const DynamicBrightnessSystemIndicator = GObject.registerClass(
             this._indicator.visible = this.toggle.checked;
 
             // 4. Sync top panel icon visibility when toggle is clicked
-            this.toggle.connect('notify::checked', () => {
+            extension.connectSignal(this.toggle, 'notify::checked', () => {
                 this._indicator.visible = this.toggle.checked;
             });
         }
@@ -127,11 +127,16 @@ export default class DynamicBrightnessExtension extends Extension {
         this._intervalMs = 2000; 
         this._userMaxBrightness = 100; 
         this._systemIndicator = null; 
+        this._signals = []; // Sinyalleri merkezi olarak takip etmek için dizi
+    }
+
+    connectSignal(object, signalName, callback) {
+        let signalId = object.connect(signalName, callback);
+        this._signals.push({ object, signalId });
+        return signalId;
     }
 
     enable() {
-        console.log("[DEBUG] Dynamic Brightness extension loaded (Standby mode).");
-
         // Create the System Indicator and inject it into GNOME's Quick Settings
         this._systemIndicator = new DynamicBrightnessSystemIndicator(this);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._systemIndicator);
@@ -142,8 +147,14 @@ export default class DynamicBrightnessExtension extends Extension {
     }
 
     disable() {
-        console.log("[DEBUG] Dynamic Brightness Disabled.");
         this.stopLoop(); 
+        
+        for (let s of this._signals) {
+            if (s.object && s.signalId) {
+                s.object.disconnect(s.signalId);
+            }
+        }
+        this._signals = [];
         
         if (this._systemIndicator) {
             this._systemIndicator.toggle.destroy();
@@ -156,7 +167,6 @@ export default class DynamicBrightnessExtension extends Extension {
         if (this._isRunning) return; // Prevent multiple loops
         this._isRunning = true;
         this._scheduleNext();
-        console.log("[DEBUG] Dynamic Brightness loop started by user.");
     }
 
     stopLoop() {
@@ -166,7 +176,6 @@ export default class DynamicBrightnessExtension extends Extension {
             GLib.Source.remove(this._timeoutId);
             this._timeoutId = null;
         }
-        console.log("[DEBUG] Dynamic Brightness loop stopped by user.");
     }
 
     // Updates the scanning frequency
@@ -279,8 +288,6 @@ export default class DynamicBrightnessExtension extends Extension {
         }
 
         this._lastBrightness = targetBrightness;
-
-        console.log(`[DEBUG] Brightness adjusted! New Target: ${targetBrightness}% (Luminance: ${luminanceRatio.toFixed(2)}%)`);
 
         try {
             // Communicate directly with GNOME Settings Daemon via D-Bus to change brightness safely

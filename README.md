@@ -20,6 +20,15 @@ Designed to provide eye comfort, especially when switching between light and dar
 
 * Hardcoded safety limits prevent the screen from dropping below 5% hardware brightness, avoiding pitch-black lockouts.
 
+## ⚠️ Limitations & Architectural Trade-offs
+
+While this extension provides a convenient, user-space solution for dynamic brightness on GNOME, it comes with certain architectural trade-offs:
+
+* **Resource Usage:** Because the extension periodically captures and analyzes screen content via JavaScript (`Shell.Screenshot`) at set intervals, it introduces a continuous, minor CPU overhead. 
+* **Battery Impact:** Frequent screen captures and pixel data processing can impact battery life more than a native, hardware-level daemon would.
+
+### Looking for a Battery-Efficient Alternative?
+If you are running Wayland and require a truly deep, native, and power-efficient solution for content-aware screen brightness (without the overhead of a GNOME extension), we highly recommend checking out **[wluma](https://github.com/emersion/wluma)**. It operates as an external, low-level daemon specifically optimized for performance and battery conservation.
 
 ## Installation
 1. Download the latest release `.zip` or clone this repository.
@@ -36,7 +45,7 @@ Designed to provide eye comfort, especially when switching between light and dar
    ```
 ## Versions support
 
-The current extension supports these GNOME Shell versions: 46 to 50
+The current extension supports these GNOME Shell versions: 45 to 50
 
 ## Acknowledgments & Inspiration
 
@@ -44,6 +53,3 @@ The core concept of dynamically adjusting screen brightness based on on-screen c
 
 While this project was built entirely from scratch specifically as a native GNOME Shell extension, I want to express my sincere gratitude and give full credit to the creators of those applications for the original inspiration.
 
-## What's Next?
-
-While the extension currently relies purely on screen content luminance, I plan to add support for physical ambient light sensors in the future. Since my current development machine lacks a hardware ALS, contributions, testing, and PRs from users with supported devices are warmly welcomed!

@@ -24,7 +24,10 @@ Designed to provide eye comfort, especially when switching between light and dar
 
 While this extension provides a convenient, user-space solution for dynamic brightness on GNOME, it comes with certain architectural trade-offs:
 
-* **Resource Usage:** Because the extension periodically captures and analyzes screen content via JavaScript (`Shell.Screenshot`) at set intervals, it introduces a continuous, minor CPU overhead. 
+* **UI Performance and Slutters:** Because the screenshot capture, downscaling and pixel luminance analysis run periodically within the GNOME Shell environment, aggressive refresh rates (e.g., every 1 second) can occasionally introduce minor UI stutters, frame drops, or micro-freezes during heavy desktop animations.
+
+* **Resource Usage:** Because the extension periodically captures and analyzes screen content via JavaScript (`Shell.Screenshot`) at set intervals, it introduces a continuous, minor CPU overhead.
+
 * **Battery Impact:** Frequent screen captures and pixel data processing can impact battery life more than a native, hardware-level daemon would.
 
 ### Looking for a Battery-Efficient Alternative?

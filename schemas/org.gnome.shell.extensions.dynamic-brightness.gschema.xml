@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.dynamic-brightness" path="/org/gnome/shell/extensions/dynamic-brightness/">
+    
+    <key name="is-active" type="b">
+      <default>false</default>
+      <summary>Extension active state</summary>
+    </key>
+
+    <key name="max-brightness" type="i">
+      <default>100</default>
+      <summary>Maximum brightness limit (20-100)</summary>
+    </key>
+
+    <key name="refresh-rate" type="i">
+      <default>2000</default>
+      <summary>Refresh rate in milliseconds</summary>
+    </key>
+
+  </schema>
+</schemalist>

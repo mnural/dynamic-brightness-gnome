@@ -22,30 +22,40 @@ const DynamicBrightnessToggle = GObject.registerClass(
             });
             this._extension = extension;
 
-            // Listen to the toggle state of the pill button
-            this._extension.connectSignal(this, 'notify::checked', () => {
+            this.connectObject('notify::checked', () => {
+            
+                // Save the status
+                this._extension._settings.set_boolean('is-active', this.checked);
+            
                 if (this.checked) {
                     this._extension.startLoop();
                 } else {
                     this._extension.stopLoop();
                 }
-            });
+                
+            }, this);
 
             // 1. Max Brightness Slider (Stepped by 10)
             // Allow user to adjust max brightness 
             // Extension arranges brightness dynamically between 5% and selected value
-            this._sliderLabel = new PopupMenu.PopupMenuItem('Max Brightness Limit: 100%', { reactive: false });
+            
+            // Retrieve the last stored max brightness value.
+            const savedMaxBrightness = this._extension._settings.get_int('max-brightness');
+            this._sliderLabel = new PopupMenu.PopupMenuItem(`Max Brightness Limit: ${savedMaxBrightness}%`, { reactive: false });
             this.menu.addMenuItem(this._sliderLabel);
-
+            
             this._sliderItem = new PopupMenu.PopupBaseMenuItem({ activate: false });
-            this._maxBrightnessSlider = new Slider.Slider(1.0);
-            this._maxBrightnessSlider.x_expand = true; 
+            
+            // Start slider with last stored max brightness value. (e.g: 80 -> 0.8)
+            this._maxBrightnessSlider = new Slider.Slider(savedMaxBrightness / 100);
+            this._maxBrightnessSlider.x_expand = true;
             
             this._sliderItem.add_child(this._maxBrightnessSlider);
             this.menu.addMenuItem(this._sliderItem);
-
-            this._extension.connectSignal(this._maxBrightnessSlider, 'notify::value', (slider) => {
-                let rawVal = slider.value * 100;
+            
+            this._maxBrightnessSlider.connectObject('notify::value', (slider) => {
+            
+                const rawVal = slider.value * 100;
                 let snappedVal = Math.round(rawVal / 10) * 10;
                 
                 // Prevent max brightness from dropping below 20%
@@ -53,17 +63,22 @@ const DynamicBrightnessToggle = GObject.registerClass(
                 if (snappedVal < 20) {
                     snappedVal = 20;
                 }
-
-                let snappedSliderVal = snappedVal / 100;
-
+                
+                const snappedSliderVal = snappedVal / 100;
+                
                 if (Math.abs(slider.value - snappedSliderVal) > 0.01) {
                     slider.value = snappedSliderVal;
                     return;
                 }
-
+                
                 this._sliderLabel.label.text = `Max Brightness Limit: ${snappedVal}%`;
                 this._extension.setMaxBrightness(snappedVal);
-            });
+                
+                // Save the value
+                this._extension._settings.set_int('max-brightness', snappedVal);
+                
+            }, this);
+            
 
             // 2. Refresh Rate Submenu
             this._intervalMenu = new PopupMenu.PopupSubMenuMenuItem('Refresh Rate');
@@ -74,20 +89,29 @@ const DynamicBrightnessToggle = GObject.registerClass(
             this._createIntervalOption('Balanced (2 Seconds)', 2000);
             this._createIntervalOption('Power Save (5 Seconds)', 5000);
             
-            // Set the default checked option to 'Balanced' manually
-            this._intervalItems[1].setIcon('radio-checked-symbolic');
         }
 
         _createIntervalOption(label, ms) {
-            let item = new PopupMenu.PopupImageMenuItem(label, 'radio-unchecked-symbolic');
-            this._extension.connectSignal(item, 'activate', () => {
+            
+            // Retrieve the last stored refresh rate
+            const savedRefreshRate = this._extension._settings.get_int('refresh-rate');
+            const initialIcon = (ms === savedRefreshRate) ? 'radio-checked-symbolic' : 'radio-unchecked-symbolic';
+            
+            const item = new PopupMenu.PopupImageMenuItem(label, initialIcon);
+            item.connectObject('activate', () => {
                 this._extension.setInterval(ms);
                 this._intervalItems.forEach(i => i.setIcon('radio-unchecked-symbolic'));
                 item.setIcon('radio-checked-symbolic');
-            });
+                
+                // Save the value
+                this._extension._settings.set_int('refresh-rate', ms);
+                
+            }, this);
+            
             this._intervalItems.push(item);
             this._intervalMenu.menu.addMenuItem(item);
         }
+        
     }
 );
 
@@ -101,17 +125,22 @@ const DynamicBrightnessSystemIndicator = GObject.registerClass(
             this._indicator = this._addIndicator();
             this._indicator.icon_name = 'preferences-desktop-display-symbolic';
             
-            // 2. Create our pill button (QuickToggle)
+            // 2. Create our quickSettings button (QuickToggle)
             this.toggle = new DynamicBrightnessToggle(extension);
             this.quickSettingsItems.push(this.toggle);
 
-            // 3. Set initial visibility to match the toggle state (which is OFF by default now)
+            // 3. Set initial visibility to match the toggle state
             this._indicator.visible = this.toggle.checked;
 
             // 4. Sync top panel icon visibility when toggle is clicked
-            extension.connectSignal(this.toggle, 'notify::checked', () => {
+            this.toggle.connectObject('notify::checked', () => {
                 this._indicator.visible = this.toggle.checked;
-            });
+            }, this);
+        }
+        
+        destroy() {
+            this.quickSettingsItems.forEach(item => item.destroy());
+            super.destroy();
         }
     }
 );
@@ -127,40 +156,34 @@ export default class DynamicBrightnessExtension extends Extension {
         this._intervalMs = 2000; 
         this._userMaxBrightness = 100; 
         this._systemIndicator = null; 
-        this._signals = []; // Sinyalleri merkezi olarak takip etmek için dizi
+
     }
 
-    connectSignal(object, signalName, callback) {
-        let signalId = object.connect(signalName, callback);
-        this._signals.push({ object, signalId });
-        return signalId;
-    }
 
     enable() {
+    
+        this._settings = this.getSettings();
+    
+        // Retrieve the last stored values.
+        this._userMaxBrightness = this._settings.get_int('max-brightness');
+        this._intervalMs = this._settings.get_int('refresh-rate');
+    
         // Create the System Indicator and inject it into GNOME's Quick Settings
         this._systemIndicator = new DynamicBrightnessSystemIndicator(this);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._systemIndicator);
         
-        // By default, we keep the plugin disabled (false). 
-        // No scans will start until the user enables it from the menu.
-        this._systemIndicator.toggle.checked = false;
+        // Apply the last active state (on/off).
+        const savedState = this._settings.get_boolean('is-active');
+        this._systemIndicator.toggle.checked = savedState;
+        
     }
 
     disable() {
         this.stopLoop(); 
-        
-        for (let s of this._signals) {
-            if (s.object && s.signalId) {
-                s.object.disconnect(s.signalId);
-            }
-        }
-        this._signals = [];
-        
-        if (this._systemIndicator) {
-            this._systemIndicator.toggle.destroy();
-            this._systemIndicator.destroy();
-            this._systemIndicator = null;
-        }
+        this._systemIndicator?.destroy();
+        this._systemIndicator = null;
+        this._settings = null;
+
     }
 
     startLoop() {
@@ -191,6 +214,13 @@ export default class DynamicBrightnessExtension extends Extension {
     // Schedules the next screen capture based on the interval
     _scheduleNext() {
         if (!this._isRunning) return; 
+        
+        // Guarantee to clear the old timer before creating a new one
+        if (this._timeoutId !== null) {
+            GLib.Source.remove(this._timeoutId);
+            this._timeoutId = null;
+        }
+
         this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, this._intervalMs, () => {
             this._timeoutId = null;
             this._captureContentSilent(); 
@@ -205,7 +235,7 @@ export default class DynamicBrightnessExtension extends Extension {
         try {
             // Create an in-memory stream to hold the image data
             memStream = Gio.MemoryOutputStream.new_resizable();
-            let screenshot = new Shell.Screenshot();
+            const screenshot = new Shell.Screenshot();
             
             // Capture the screen and write directly to memory
             await screenshot.screenshot(false, memStream);
@@ -223,13 +253,11 @@ export default class DynamicBrightnessExtension extends Extension {
     _processImageFromMemoryAsync(memStream) {
         let inputStream = null;
         try {
-            // Extract raw bytes from the memory stream
-            let bytes = memStream.steal_as_bytes();
+            const bytes = memStream.steal_as_bytes();
             if (!bytes || bytes.get_size() === 0) {
                 this._scheduleNext();
                 return;
             }
-            // Create an input stream to read the bytes
             inputStream = Gio.MemoryInputStream.new_from_bytes(bytes);
 
             // Load the image into a GdkPixbuf, downscaling it to 32x32 for fast processing
@@ -237,32 +265,36 @@ export default class DynamicBrightnessExtension extends Extension {
                 inputStream, 32, 32, false, null,
                 (source_object, res) => {
                     try {
-                        let pixbuf = GdkPixbuf.Pixbuf.new_from_stream_finish(res);
-                        let pixels = pixbuf.get_pixels();
+                        const pixbuf = GdkPixbuf.Pixbuf.new_from_stream_finish(res);
+                        const pixels = pixbuf.get_pixels();
                         
                         if (pixels && pixels.length > 0) {
                             let totalLuminance = 0;
                             let pixelCount = 0;
-                            let n_channels = pixbuf.get_n_channels();
+                            const n_channels = pixbuf.get_n_channels();
 
                             for (let idx = 0; idx < pixels.length; idx += n_channels) {
-                                let r = pixels[idx];     
-                                let g = pixels[idx + 1]; 
-                                let b = pixels[idx + 2]; 
+                                const r = pixels[idx];     
+                                const g = pixels[idx + 1]; 
+                                const b = pixels[idx + 2]; 
                                 
                                 // Calculate perceived luminance (human eye formula)
                                 totalLuminance += (0.299 * r) + (0.587 * g) + (0.114 * b);
                                 pixelCount++;
                             }
 
-                            let ratio = pixelCount > 0 ? ((totalLuminance / pixelCount) / 255) * 100 : 0;
+                            const ratio = pixelCount > 0 ? ((totalLuminance / pixelCount) / 255) * 100 : 0;
                             this._adjustBrightness(ratio);
                         }
                     } catch (err) {
                         console.error(`[ERROR] Async processing error: ${err}`);
                     } finally {
                         // Ensure the input stream is closed and the loop continues
-                        if (inputStream) { try { inputStream.close(null); } catch (e) {} }
+                        if (inputStream) {  
+                        
+                            inputStream.close(null);
+                            
+                        }
                         this._scheduleNext();
                     }
                 }
@@ -274,13 +306,13 @@ export default class DynamicBrightnessExtension extends Extension {
     }
 
     _adjustBrightness(luminanceRatio) {
-        let maxBrightness = this._userMaxBrightness;
+        const maxBrightness = this._userMaxBrightness;
         
         // Define minimum brightness: ensure it never drops below 5% to prevent a total black screen (especially for OLED displays)
-        let minBrightness = Math.max(5, Math.round(maxBrightness * 0.1)); 
+        const minBrightness = Math.max(5, Math.round(maxBrightness * 0.1)); 
         
         // Inverse proportion: Brighter screen content means lower hardware brightness
-        let targetBrightness = Math.round(maxBrightness - (luminanceRatio / 100) * (maxBrightness - minBrightness));
+        const targetBrightness = Math.round(maxBrightness - (luminanceRatio / 100) * (maxBrightness - minBrightness));
         
         // Hysteresis: Ignore changes smaller than 5% to prevent annoying screen flickering
         if (this._lastBrightness !== -1 && Math.abs(this._lastBrightness - targetBrightness) < 5) {
@@ -306,7 +338,11 @@ export default class DynamicBrightnessExtension extends Extension {
                 -1,
                 null,
                 (conn, res) => {
-                    try { conn.call_finish(res); } catch (e) {}
+                    try {
+                        conn.call_finish(res); 
+                        } catch (e) {
+                            console.error(`[ERROR] DBus finish error: ${e}`);
+                        }
                 }
             );
         } catch (e) {

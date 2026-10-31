@@ -23,24 +23,26 @@ Easier on the eyes when you switch between light and dark content.
 * GNOME 46–48: turn off Automatic Screen Brightness first, since both control the same setting.
 
 ## Installation
-The extension can be installed either from 
 
-https://extensions.gnome.org/extension/10557/dynamic-brightness/ 
+The easiest way is the one-click install from
+[extensions.gnome.org](https://extensions.gnome.org/extension/10557/dynamic-brightness/),
+which also picks the right version for your GNOME release.
 
-with one-click install
+### Manual installation
 
-OR
-
-1. Download the latest release `.zip` or clone this repository.
-2. Install the extension using the terminal:
+1. Download `dynamic-brightness@mnural.com.shell-extension.zip` from the
+   [latest release](../../releases/latest).
+2. Install it:
    ```
    gnome-extensions install dynamic-brightness@mnural.com.shell-extension.zip
    ```
-4. Log out and log back in.
-5. Enable the extension:
+3. Log out and log back in.
+4. Enable the extension:
+
    ```
    gnome-extensions enable dynamic-brightness@mnural.com
    ```
+
 ## Demonstration
 <div align="center">
   <video src="https://github.com/user-attachments/assets/1d57157e-d916-4b59-8b5c-8831c6885624" width="80%" autoplay loop muted playsinline></video>

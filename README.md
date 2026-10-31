@@ -1,58 +1,47 @@
 # Dynamic Brightness for GNOME
 
-A GNOME Shell extension that dynamically adjusts hardware screen brightness based on the active screen content luminance.
+Adjusts your screen brightness to what's on screen: dimmer for bright pages, brighter for dark ones. 
 
-Designed to provide eye comfort, especially when switching between light and dark content on laptop screens.
-
-<div align="center">
-  <video src="https://github.com/user-attachments/assets/8f9c4792-4d3f-490a-9c52-dff409902ea8
-" width="80%" autoplay loop muted playsinline></video>
-</div>
+Easier on the eyes when you switch between light and dark content.
 
 ## Features
-* GNOME 45+ Quick Settings menu integration.
+* Brightness range right in Quick Settings
+* Customizable response curve
+* Smooth transitions
+* Pauses for fullscreen games and videos
+* Light on resources: the screen is measured only when its content changes, from a tiny thumbnail rendered on the GPU.
 
-* Screen content is captured by GNOME Shell's native functions (`Shell.Screenshot`) and analyzed strictly within GNOME Shell's isolated memory process. No image data is ever saved to the disk, logged or exposed. This ensures complete data privacy and security.
 
-* Prevents annoying screen flickering by filtering out minor pixel luminance shifts.
+<img width="500" height="500" alt="screenshot1" src="https://github.com/user-attachments/assets/717b3440-fbad-41db-9cfd-1e63ada69221" />
 
-* Adjustable maximum brightness limit.
+<img width="500" height="500" alt="screenshot2" src="https://github.com/user-attachments/assets/d8926eb6-3d43-4698-a6a9-904c321d91cf" />
 
-* Hardcoded safety limits prevent the screen from dropping below 5% hardware brightness, avoiding pitch-black lockouts.
 
-## ⚠️ Limitations & Architectural Trade-offs
-
-While this extension provides a convenient, user-space solution for dynamic brightness on GNOME, it comes with certain architectural trade-offs:
-
-* **UI Performance and Slutters:** Because the screenshot capture, downscaling and pixel luminance analysis run periodically within the GNOME Shell environment, aggressive refresh rates (e.g., every 1 second) can occasionally introduce minor UI stutters, frame drops, or micro-freezes during heavy desktop animations.
-
-* **Resource Usage:** Because the extension periodically captures and analyzes screen content via JavaScript (`Shell.Screenshot`) at set intervals, it introduces a continuous, minor CPU overhead.
-
-* **Battery Impact:** Frequent screen captures and pixel data processing can impact battery life more than a native, hardware-level daemon would.
-
-### Looking for a Battery-Efficient Alternative?
-If you are running Wayland and require a truly deep, native, and power-efficient solution for content-aware screen brightness (without the overhead of a GNOME extension), we highly recommend checking out **[wluma](https://github.com/emersion/wluma)**. It operates as an external, low-level daemon specifically optimized for performance and battery conservation.
+## Notes
+* No multi-monitor support, only the primary monitor is measured. 
+* GNOME 49 and later: works together with Automatic Screen Brightness.
+* GNOME 46–48: turn off Automatic Screen Brightness first, since both control the same setting.
 
 ## Installation
+The extension can be installed either from 
+
+https://extensions.gnome.org/extension/10557/dynamic-brightness/ 
+
+with one-click install
+
+OR
+
 1. Download the latest release `.zip` or clone this repository.
 2. Install the extension using the terminal:
-
    ```
    gnome-extensions install dynamic-brightness@mnural.com.shell-extension.zip
    ```
 4. Log out and log back in.
 5. Enable the extension:
-
    ```
    gnome-extensions enable dynamic-brightness@mnural.com
    ```
-## Versions support
-
-The current extension supports these GNOME Shell versions: 45 to 50
-
-## Acknowledgments & Inspiration
-
-The core concept of dynamically adjusting screen brightness based on on-screen content luminance is not my original idea. This extension was heavily inspired by existing tools like [wluma](https://github.com/maximbaz/wluma) and [lumen](https://github.com/anishathalye/lumen).
-
-While this project was built entirely from scratch specifically as a native GNOME Shell extension, I want to express my sincere gratitude and give full credit to the creators of those applications for the original inspiration.
-
+## Demonstration
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/1d57157e-d916-4b59-8b5c-8831c6885624" width="80%" autoplay loop muted playsinline></video>
+</div>

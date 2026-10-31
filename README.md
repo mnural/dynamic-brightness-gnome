@@ -1,3 +1,6 @@
+> **This branch is for GNOME 46–48.** For GNOME 49 and later, see the
+> [`main`](../../tree/main) branch.
+
 # Dynamic Brightness for GNOME
 
 Adjusts your screen brightness to what's on screen: dimmer for bright pages, brighter for dark ones. 

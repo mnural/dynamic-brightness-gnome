@@ -1,15 +1,12 @@
 {
   "name": "Dynamic Brightness",
-  "description": "Adjust screen brightness dynamically based on the screen contents.",
+  "description": "Adjusts your screen brightness to what's on screen: dimmer for bright pages, brighter for dark ones. Easier on the eyes when you switch between light and dark content.\n\nFeatures:\n• Brightness range right in Quick Settings\n• Customizable response curve\n• Smooth transitions\n• Pauses for fullscreen games and videos\n\nLight on resources: the screen is measured only when its content changes, from a tiny thumbnail rendered on the GPU.\n\nNotes:\n• Only the primary monitor is measured.\n• GNOME 49 and later: works together with Automatic Screen Brightness.\n• GNOME 46–48: turn off Automatic Screen Brightness first, since both control the same setting.",
   "uuid": "dynamic-brightness@mnural.com",
   "url": "https://github.com/mnural/dynamic-brightness-gnome",
   "shell-version": [
-    "45",
-    "46",
-    "47",
-    "48",
     "49",
-    "50"
+    "50",
+    "51"
   ],
   "settings-schema": "org.gnome.shell.extensions.dynamic-brightness"
 }

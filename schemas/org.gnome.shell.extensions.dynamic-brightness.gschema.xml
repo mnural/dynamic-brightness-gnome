@@ -1,20 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
   <schema id="org.gnome.shell.extensions.dynamic-brightness" path="/org/gnome/shell/extensions/dynamic-brightness/">
-    
+
     <key name="is-active" type="b">
       <default>false</default>
       <summary>Extension active state</summary>
     </key>
 
-    <key name="max-brightness" type="i">
-      <default>100</default>
-      <summary>Maximum brightness limit (20-100)</summary>
+    <key name="min-brightness" type="i">
+      <default>5</default>
+      <range min="0" max="90"/>
+      <summary>Minimum brightness limit (0-90)</summary>
     </key>
 
-    <key name="refresh-rate" type="i">
-      <default>2000</default>
-      <summary>Refresh rate in milliseconds</summary>
+    <key name="max-brightness" type="i">
+      <default>100</default>
+      <range min="10" max="100"/>
+      <summary>Maximum brightness limit (10-100)</summary>
+    </key>
+
+    <key name="show-indicator" type="b">
+       <default>true</default>
+       <summary>Show panel indicator</summary>
+    </key>
+
+    <key name="hysteresis" type="i">
+         <default>5</default>
+         <range min="1" max="20"/>
+         <summary>Ignore content brightness changes smaller than this</summary>
+    </key>
+
+    <key name="pause-fullscreen" type="b">
+      <default>true</default>
+      <summary>Pause in fullscreen</summary>
+    </key>
+
+    <key name="brightness-curve" type="ad">
+      <default>[100.0, 90.0, 80.0, 70.0, 60.0, 50.0, 40.0, 30.0, 20.0, 10.0, 5.0]</default>
+      <summary>Brightness curve</summary>
+    </key>
+
+    <key name="capture-rate" type="i">
+      <default>1</default>
+      <range min="0" max="5"/>
+      <summary>Screen sampling rate while content is changing (0=10 Hz … 5=1 Hz)</summary>
+    </key>
+
+    <key name="disable-on-manual-change" type="b">
+      <default>true</default>
+      <summary>Turn off when brightness is changed manually</summary>
+    </key>
+
+    <key name="smooth-transitions" type="b">
+      <default>true</default>
+      <summary>Fade brightness changes smoothly</summary>
+    </key>
+
+    <key name="current-luminance" type="d">
+      <default>-1.0</default>
+      <summary>Last measured content luminance (runtime state, not a user setting)</summary>
+    </key>
+
+    <key name="is-prefs-open" type="b">
+      <default>false</default>
+      <summary>State of the preferences window (runtime state, not a user setting)</summary>
     </key>
 
   </schema>

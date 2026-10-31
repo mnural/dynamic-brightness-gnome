@@ -30,14 +30,18 @@ which also picks the right version for your GNOME release.
 
 ### Manual installation
 
-1. Download `dynamic-brightness@mnural.com.shell-extension.zip` from the
+1. On GNOME 49+, Download `dynamic-brightness@mnural.com.shell-extension.zip` from the
    [latest release](../../releases/latest).
-2. Install it:
+   
+   On GNOME 46–48, use the zip from the
+[`v2.0.0-gnome46-48`](../../releases/tag/v2.0.0-gnome46-48) release instead.
+
+3. Install it:
    ```
    gnome-extensions install dynamic-brightness@mnural.com.shell-extension.zip
    ```
-3. Log out and log back in.
-4. Enable the extension:
+4. Log out and log back in.
+5. Enable the extension:
 
    ```
    gnome-extensions enable dynamic-brightness@mnural.com

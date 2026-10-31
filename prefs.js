@@ -42,13 +42,6 @@ export default class DynamicBrightnessPreferences extends ExtensionPreferences {
         behaviorGroup.add(fullscreenRow);
         settings.bind('pause-fullscreen', fullscreenRow, 'active', Gio.SettingsBindFlags.DEFAULT);
 
-        const manualOffRow = new Adw.SwitchRow({
-            title: 'Turn Off on Manual Change',
-            subtitle: 'Turn off when you change brightness yourself',
-        });
-        behaviorGroup.add(manualOffRow);
-        settings.bind('disable-on-manual-change', manualOffRow, 'active', Gio.SettingsBindFlags.DEFAULT);
-
         const smoothRow = new Adw.SwitchRow({
             title: 'Smooth Transitions',
             subtitle: 'Fade between brightness levels instead of switching instantly',
@@ -111,10 +104,6 @@ export default class DynamicBrightnessPreferences extends ExtensionPreferences {
             activatable: false,
         }));
 
-        const curveNoteRow = new Adw.ActionRow({
-            subtitle: "If 'Automatic Screen Brightness' is enabled, GNOME also uses the ambient light sensor, so the final brightness may differ from this graph.",
-        });
-        curveGroup.add(curveNoteRow);
         pageAdvanced.add(curveGroup);
 
         window.add(pageGeneral);

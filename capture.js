@@ -90,8 +90,6 @@ export class ContentSampler {
         // Listen for the next change before anything else.
         this._armPaintSignal();
 
-        if (Main.brightnessManager.dimming)   // idle dimming, leave it alone
-            return;
         if (this._settings.get_boolean('pause-fullscreen') && isPrimaryFullscreen())
             return;
 
@@ -129,8 +127,10 @@ async function measureArea({x, y, width, height}) {
     const stage = global.stage;
     const rect = new Mtk.Rectangle({x, y, width, height});
 
-    const content = stage.paint_to_content(
-        rect, SCALE, stage.get_color_state(), Clutter.PaintFlag.NO_CURSORS);
+    // GNOME 47+ takes a colour state argument, 46 does not.
+    const content = stage.paint_to_content.length >= 4
+        ? stage.paint_to_content(rect, SCALE, stage.get_color_state(), Clutter.PaintFlag.NO_CURSORS)
+        : stage.paint_to_content(rect, SCALE, Clutter.PaintFlag.NO_CURSORS);
     if (!content)
         return null;
 

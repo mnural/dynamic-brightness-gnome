@@ -4,9 +4,9 @@
   "uuid": "dynamic-brightness@mnural.com",
   "url": "https://github.com/mnural/dynamic-brightness-gnome",
   "shell-version": [
-    "49",
-    "50",
-    "51"
+    "46",
+    "47",
+    "48"
   ],
   "settings-schema": "org.gnome.shell.extensions.dynamic-brightness"
 }

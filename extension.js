@@ -1,16 +1,34 @@
+import Gio from 'gi://Gio';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import {hasAmbientLightSensor} from './als.js';
 import {BrightnessWriter} from './brightness.js';
 import {ContentSampler} from './capture.js';
 import {loadCurve, evalCurve, toBrightness} from './curve.js';
 import {DynamicBrightnessIndicator} from './quicksettings.js';
+
+// gsd's automatic brightness writes the same value we do, so the two fight. It only
+// runs when a light sensor exists; ambient-enabled defaults to true even without one,
+// and Settings just hides the switch then.
+function isAutoBrightnessConflict(hasSensor) {
+    if (!hasSensor)
+        return false;
+
+    const schema = Gio.SettingsSchemaSource.get_default()
+        .lookup('org.gnome.settings-daemon.plugins.power', true);
+    if (!schema?.has_key('ambient-enabled'))
+        return false;
+
+    return new Gio.Settings({settings_schema: schema}).get_boolean('ambient-enabled');
+}
 
 export default class DynamicBrightnessExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
         this._curve = loadCurve(this._settings);
         this._lastLuminance = -1;
+        this._hasSensor = false;
 
         this._brightness = new BrightnessWriter({
             onUnavailable: () => this._setUnavailable('Brightness control unavailable'),
@@ -26,15 +44,20 @@ export default class DynamicBrightnessExtension extends Extension {
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
 
         this._settings.connectObject('changed', (_settings, key) => this._onSettingChanged(key), this);
-        Main.brightnessManager.connectObject('user-update', () => this._onUserBrightnessChange(), this);
 
-        if (this._settings.get_boolean('is-active'))
-            this._start();
+        // The conflict check needs to know whether there is a light sensor,
+        // so only start once that is known.
+        hasAmbientLightSensor().then(hasSensor => {
+            if (!this._settings)   // disabled in the meantime
+                return;
+            this._hasSensor = hasSensor;
+            if (this._settings.get_boolean('is-active'))
+                this._start();
+        });
     }
 
     disable() {
         this._stop();
-        Main.brightnessManager.disconnectObject(this);
         this._settings.disconnectObject(this);
 
         this._indicator.destroy();
@@ -47,6 +70,14 @@ export default class DynamicBrightnessExtension extends Extension {
     }
 
     _start() {
+        if (isAutoBrightnessConflict(this._hasSensor)) {
+            Main.notify('Dynamic Brightness',
+                'Automatic Screen Brightness is on and conflicts with this extension on GNOME 48 and earlier. ' +
+                'Turn it off in Settings › Power, then turn Dynamic Brightness on again.');
+            this._settings.set_boolean('is-active', false);   // the toggle follows
+            return;
+        }
+
         this._indicator.setUnavailable(null);   // try again each time it is turned on
         this._lastLuminance = -1;
         this._sampler.start();
@@ -83,17 +114,6 @@ export default class DynamicBrightnessExtension extends Extension {
             this._lastLuminance = -1;   // same for a new range
             break;
         }
-    }
-
-    _onUserBrightnessChange() {
-        if (this._brightness.isWriting)   // our own write, not the user
-            return;
-        if (!this._sampler.running || !this._settings.get_boolean('disable-on-manual-change'))
-            return;
-
-        this._settings.set_boolean('is-active', false);   // the toggle and the loop follow
-        Main.notify('Dynamic Brightness turned off',
-            'Brightness was changed by the user.');
     }
 
     _adjustBrightness(luminance) {

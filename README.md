@@ -48,3 +48,6 @@ which also picks the right version for your GNOME release.
 <div align="center">
   <video src="https://github.com/user-attachments/assets/1d57157e-d916-4b59-8b5c-8831c6885624" width="80%" autoplay loop muted playsinline></video>
 </div>
+
+## Feedback
+Bug reports and feature requests are welcome in the [issues](../../issues).
